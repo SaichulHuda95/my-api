@@ -1,11 +1,11 @@
 <?php
-//route untuk ambil data dari body request json
 Flight::route('POST /qrcode/create', function () {
     require_once "phpqrcode/qrlib.php";
 
-    $data = Flight::request()->data;
+    // Ambil inputan dari form multipart/form-data
+    $url = $_POST['url'] ?? '';
 
-    if (empty($data->url)) {
+    if (empty($url)) {
         Flight::json([
             'code' => 400,
             'message' => 'Field url tidak boleh kosong'
@@ -13,20 +13,55 @@ Flight::route('POST /qrcode/create', function () {
         return;
     }
 
-    $url = $data->url;
-    $logo = $data->logo;
+    // Buat QR code ke file temp
+    $tempQRPath = tempnam(sys_get_temp_dir(), 'qrcode') . '.png';
+    QRcode::png($url, $tempQRPath, QR_ECLEVEL_H, 10);
+    $QR = imagecreatefrompng($tempQRPath);
 
-    $barcode = $url;
+    // Cek apakah ada logo yang diupload
+    if (!empty($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+        $logoTmpPath = $_FILES['logo']['tmp_name'];
+        $logoImg = @imagecreatefromstring(file_get_contents($logoTmpPath));
+
+        if ($logoImg) {
+            $QR_width = imagesx($QR);
+            $QR_height = imagesy($QR);
+
+            $logo_width = imagesx($logoImg);
+            $logo_height = imagesy($logoImg);
+
+            $logo_qr_width = $QR_width / 5;
+            $scale = $logo_width / $logo_qr_width;
+            $logo_qr_height = $logo_height / $scale;
+
+            $from_width = ($QR_width - $logo_qr_width) / 2;
+
+            imagecopyresampled(
+                $QR,
+                $logoImg,
+                $from_width,
+                $from_width,
+                0,
+                0,
+                $logo_qr_width,
+                $logo_qr_height,
+                $logo_width,
+                $logo_height
+            );
+        }
+    }
+
+    // Encode gambar ke base64
     ob_start();
-    QRcode::png($barcode, null, QR_ECLEVEL_H, 10);
+    imagepng($QR);
     $imageData = ob_get_clean();
+    unlink($tempQRPath);
+
     $base64Image = 'data:image/png;base64,' . base64_encode($imageData);
 
-    $response = [
+    Flight::json([
         'code' => 200,
-        'message' => 'QR Code berhasil dibuat.',
+        'message' => 'Success',
         'image' => $base64Image
-    ];
-
-    Flight::json($response);
+    ]);
 });
