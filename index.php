@@ -13,4 +13,8 @@ foreach (glob("modules/*/*.php") as $file) {
     require_once $file;
 }
 
+// Header CORS global
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 Flight::start();
