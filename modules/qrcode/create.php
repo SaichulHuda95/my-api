@@ -39,14 +39,14 @@ Flight::route('POST /qrcode/create', function () {
             imagecopyresampled(
                 $QR,
                 $logoImg,
-                $from_width,
-                $from_width,
+                (int) $from_width,
+                (int) $from_width,
                 0,
                 0,
-                $logo_qr_width,
-                $logo_qr_height,
-                $logo_width,
-                $logo_height
+                (int) $logo_qr_width,
+                (int) $logo_qr_height,
+                (int) $logo_width,
+                (int) $logo_height
             );
         }
     }
