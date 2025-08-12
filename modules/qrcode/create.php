@@ -2,7 +2,6 @@
 Flight::route('POST /qrcode/create', function () {
     require_once "phpqrcode/qrlib.php";
 
-    // Ambil inputan dari form multipart/form-data
     $url = $_POST['url'] ?? '';
 
     if (empty($url)) {
@@ -13,12 +12,14 @@ Flight::route('POST /qrcode/create', function () {
         return;
     }
 
-    // Buat QR code ke file temp
-    $tempQRPath = tempnam(sys_get_temp_dir(), 'qrcode') . '.png';
-    QRcode::png($url, $tempQRPath, QR_ECLEVEL_H, 10);
-    $QR = imagecreatefrompng($tempQRPath);
+    // Generate QR langsung ke memori
+    ob_start();
+    QRcode::png($url, null, QR_ECLEVEL_H, 10);
+    $qrData = ob_get_clean();
 
-    // Cek apakah ada logo yang diupload
+    $QR = imagecreatefromstring($qrData);
+
+    // Cek logo
     if (!empty($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
         $logoTmpPath = $_FILES['logo']['tmp_name'];
         $logoImg = @imagecreatefromstring(file_get_contents($logoTmpPath));
@@ -55,7 +56,6 @@ Flight::route('POST /qrcode/create', function () {
     ob_start();
     imagepng($QR);
     $imageData = ob_get_clean();
-    unlink($tempQRPath);
 
     $base64Image = 'data:image/png;base64,' . base64_encode($imageData);
 
