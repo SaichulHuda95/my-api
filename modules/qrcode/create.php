@@ -1,5 +1,5 @@
 <?php
-Flight::route('POST /qrcode/create', function () {
+Flight::route('POST /qrcode_php7/create', function () {
     require_once "phpqrcode/qrlib.php";
 
     $url = $_POST['url'] ?? '';
